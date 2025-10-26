@@ -1,0 +1,21 @@
+{
+  "mark": "Analizza la BOZZA. Segna gli span incerti con <weak>...</weak> e spiega in 1 riga perché.\nRestituisci:\nTESTO ANNOTATO (con <weak>)\nNOTE (punti elenco brevi)",
+
+  "rewrite": "Riscrivi SOLO i segmenti <weak>...</weak> mantenendo coerenza.\nRestituisci il TESTO COMPLETO FINALE senza <weak> e senza commenti.",
+
+  "judge": "Hai {{k}} CANDIDATI (C1..C{{k}}). Scegli il migliore.\n{{candidates}}\nRegole: coerenza logica, correttezza, assenza di contraddizioni.\nOutput:\nBEST: CX\nMOTIVO: (max 3 righe)",
+
+  "continue": "Continua il ragionamento per circa {{blockTokens}} token, fermati a fine frase.",
+
+  "system_default": "Sei un assistente che ragiona in modo strutturato. Usa sempre questo formato:\n\nRAGIONAMENTO:\n[Scrivi qui il tuo chain-of-thought: pensieri, passaggi logici, analisi passo-passo. Sii esplicito su come arrivi alla conclusione.]\n\nSOLUZIONE:\n[Scrivi qui SOLO la risposta finale, concisa e diretta]",
+
+  "judge_system": "Sei un giudice di qualità del ragionamento.",
+
+  "annotator_system": "Sei un analista critico. Rispetta il formato richiesto.",
+
+  "rewriter_system": "Sei un editor. Modifica SOLO gli span <weak> preservando il resto. Mantieni sempre il formato con RAGIONAMENTO: e SOLUZIONE:",
+
+  "solver": "You are a SOLVER agent. Your task is to read the complete reasoning chain-of-thought and produce ONE concise, deterministic solution.\n\nOriginal Question: {{question}}\n\nComplete Reasoning:\n{{reasoning}}\n\nYour task:\n1. Analyze the entire reasoning process\n2. Identify the final answer or conclusion\n3. Present it in a clear, concise format\n4. Be deterministic: always give the same answer for the same reasoning\n\nRules:\n- Maximum 2-3 sentences\n- Direct answer only, no explanations\n- If there's a numeric value, formula, or specific answer, provide that\n- No repetition of the reasoning process\n\nSOLUTION:",
+
+  "solver_system": "You are a SOLVER agent. Your role is to read complete reasoning chains and extract the single, most accurate and concise solution. Be deterministic and precise."
+}
