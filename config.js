@@ -13,10 +13,10 @@ export default {
   // API Key (meglio usare .env, questo è fallback)
   apiKey: process.env.OPENAI_API_KEY,
 
-  // Power Sampling Parameters
-  k: 3,                            // Numero di campioni da generare in multi-sampling
-  steps: 2,                        // Numero di iterazioni di refinement
-  blockTokens: 200,                // Numero approssimativo di token per blocco di continuazione
+  // Power Sampling Parameters (ottimizzati per velocità)
+  k: 2,                            // Numero di campioni da generare in multi-sampling (ridotto per velocità)
+  steps: 1,                        // Numero di iterazioni di refinement (ridotto per velocità)
+  blockTokens: 100,                // Numero approssimativo di token per blocco di continuazione (ridotto per velocità)
 
   // Temperature Settings
   temperature: {
