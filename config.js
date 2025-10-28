@@ -31,5 +31,9 @@ export default {
 
   // Debug & Logging
   verbose: false,                  // Log dettagliato delle operazioni
-  logCosts: true                   // Mostra stima costi per chiamata
+  logCosts: true,                  // Mostra stima costi per chiamata
+
+  // Multilingual Support
+  autoDetectLanguage: true,        // Rileva automaticamente la lingua del prompt
+  defaultLanguage: 'en'            // Lingua di fallback se detection fallisce
 };

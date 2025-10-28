@@ -55,6 +55,105 @@ export class PowerSampling {
 
     // Load prompts
     this.prompts = null;
+
+    // Language cache
+    this.detectedLanguage = null;
+  }
+
+  /**
+   * Detect language from user prompt
+   * Uses a lightweight LLM call to identify language (cached)
+   */
+  async detectLanguage(prompt) {
+    // Return cached if available
+    if (this.detectedLanguage) {
+      return this.detectedLanguage;
+    }
+
+    try {
+      const response = await this.callLLM([
+        {
+          role: 'system',
+          content: 'Detect the language of the user message. Reply with ONLY the ISO 639-1 code (2 letters): it, en, es, de, zh, fr, ru. Nothing else.'
+        },
+        {
+          role: 'user',
+          content: prompt.substring(0, 200) // First 200 chars are enough
+        }
+      ], {
+        temperature: 0.0,
+        n: 1
+      });
+
+      const detected = response.choices[0].content.trim().toLowerCase().substring(0, 2);
+
+      // Validate language code
+      const validLanguages = ['it', 'en', 'es', 'de', 'zh', 'fr', 'ru'];
+      this.detectedLanguage = validLanguages.includes(detected) ? detected : 'en';
+
+      if (this.config.verbose) {
+        console.log(`🌍 Language detected: ${this.detectedLanguage}`);
+      }
+
+      return this.detectedLanguage;
+    } catch (error) {
+      console.warn('Language detection failed, using default:', error.message);
+      this.detectedLanguage = this.config.defaultLanguage || 'en';
+      return this.detectedLanguage;
+    }
+  }
+
+  /**
+   * Load prompt template for specific language
+   * Supports both old format (string) and new format (object with languages)
+   */
+  loadPromptTemplate(promptKey, language = 'en', variables = {}) {
+    const promptData = this.prompts[promptKey];
+
+    if (!promptData) {
+      throw new Error(`Prompt template "${promptKey}" not found`);
+    }
+
+    let template;
+
+    // New format: { template, languages: { it: "...", en: "..." } }
+    if (typeof promptData === 'object' && promptData.languages) {
+      template = promptData.languages[language] || promptData.languages['en'] || promptData.template;
+    }
+    // Old format: simple string
+    else if (typeof promptData === 'string') {
+      template = promptData;
+    }
+    // Fallback
+    else {
+      template = String(promptData);
+    }
+
+    // Replace variables like {{language}}, {{k}}, {{candidates}}, etc.
+    let result = template.replace(/\{\{language\}\}/g, this.getLanguageName(language));
+
+    for (const [key, value] of Object.entries(variables)) {
+      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+      result = result.replace(regex, value);
+    }
+
+    return result;
+  }
+
+  /**
+   * Get full language name from code
+   */
+  getLanguageName(code) {
+    const names = {
+      'it': 'italiano',
+      'en': 'English',
+      'es': 'español',
+      'de': 'Deutsch',
+      'zh': '中文',
+      'fr': 'français',
+      'ru': 'русский'
+    };
+    return names[code] || 'English';
   }
 
   /**
@@ -74,15 +173,18 @@ export class PowerSampling {
   /**
    * SOLVER agent - Extract deterministic solution from reasoning
    */
-  async solverAgent(originalQuestion, reasoning) {
+  async solverAgent(originalQuestion, reasoning, language = 'en') {
     await this.loadPrompts();
 
-    const solverPrompt = this.prompts.solver
-      .replace(/\{\{question\}\}/g, originalQuestion)
-      .replace(/\{\{reasoning\}\}/g, reasoning);
+    const solverPrompt = this.loadPromptTemplate('solver', language, {
+      question: originalQuestion,
+      reasoning: reasoning
+    });
+
+    const solverSystem = this.loadPromptTemplate('solver_system', language);
 
     const messages = [
-      { role: 'system', content: this.prompts.solver_system || 'You are a SOLVER agent.' },
+      { role: 'system', content: solverSystem },
       { role: 'user', content: solverPrompt }
     ];
 
@@ -172,6 +274,7 @@ MOTIVO: (max 3 righe)`
   async multiSampleConsensus(baseMessages, options = {}) {
     const k = options.k || this.config.k;
     const temperature = options.temperature || this.config.temperature.sample;
+    const language = options.language || this.detectedLanguage || 'en';
 
     // Generate k candidates
     const response = await this.callLLM(baseMessages, { n: k, temperature });
@@ -183,12 +286,15 @@ MOTIVO: (max 3 righe)`
       .map((c, i) => `C${i + 1}:\n${c}`)
       .join('\n\n');
 
-    const judgePrompt = this.prompts.judge
-      .replace(/\{\{k\}\}/g, k)
-      .replace(/\{\{candidates\}\}/g, candidatesText);
+    const judgePrompt = this.loadPromptTemplate('judge', language, {
+      k: k,
+      candidates: candidatesText
+    });
+
+    const judgeSystem = this.loadPromptTemplate('judge_system', language);
 
     const judgeMessages = [
-      { role: 'system', content: 'Sei un giudice di qualità del ragionamento.' },
+      { role: 'system', content: judgeSystem },
       { role: 'user', content: judgePrompt }
     ];
 
@@ -198,7 +304,9 @@ MOTIVO: (max 3 righe)`
     });
 
     const judgeContent = judgeResponse.choices[0].content;
-    const bestMatch = /BEST:\s*C(\d+)/i.exec(judgeContent);
+
+    // Multi-language regex for "BEST: CX" or "MIGLIORE: CX" etc.
+    const bestMatch = judgeContent.match(/(?:BEST|MIGLIORE|MEJOR|BESTER|最佳|MEILLEUR|ЛУЧШИЙ):\s*C(\d+)/i);
     const bestIdx = bestMatch ? parseInt(bestMatch[1], 10) - 1 : 0;
     const safeIdx = Math.max(0, Math.min(bestIdx, candidates.length - 1));
 
@@ -214,12 +322,16 @@ MOTIVO: (max 3 righe)`
    */
   async annotateAndRewrite(draft, options = {}) {
     const temperature = options.temperature || this.config.temperature.rewrite;
+    const language = options.language || this.detectedLanguage || 'en';
     await this.loadPrompts();
 
     // Annotation phase
+    const markPrompt = this.loadPromptTemplate('mark', language, { draft });
+    const markSystem = this.loadPromptTemplate('annotator_system', language);
+
     const markMessages = [
-      { role: 'system', content: 'Sei un analista critico. Rispetta il formato richiesto.' },
-      { role: 'user', content: `BOZZA:\n${draft}\n\n${this.prompts.mark}` }
+      { role: 'system', content: markSystem },
+      { role: 'user', content: markPrompt }
     ];
 
     const markResponse = await this.callLLM(markMessages, { n: 1, temperature });
@@ -227,17 +339,30 @@ MOTIVO: (max 3 righe)`
 
     // Check if there are weak spans
     if (!annotated.includes('<weak>')) {
+      const noWeakMessage = {
+        'it': 'Nessuno span debole identificato.',
+        'en': 'No weak spans identified.',
+        'es': 'No se identificaron tramos débiles.',
+        'de': 'Keine schwachen Abschnitte identifiziert.',
+        'zh': '未发现薄弱部分。',
+        'fr': 'Aucun passage faible identifié.',
+        'ru': 'Слабых участков не обнаружено.'
+      };
+
       return {
         final: draft,
         annotated,
-        notes: 'Nessuno span debole identificato.'
+        notes: noWeakMessage[language] || noWeakMessage['en']
       };
     }
 
     // Rewrite phase
+    const rewritePrompt = this.loadPromptTemplate('rewrite', language, { annotated });
+    const rewriteSystem = this.loadPromptTemplate('rewriter_system', language);
+
     const rewriteMessages = [
-      { role: 'system', content: 'Sei un editor. Modifica SOLO gli span <weak> preservando il resto.' },
-      { role: 'user', content: `TESTO ANNOTATO:\n${annotated}\n\n${this.prompts.rewrite}` }
+      { role: 'system', content: rewriteSystem },
+      { role: 'user', content: rewritePrompt }
     ];
 
     const rewriteResponse = await this.callLLM(rewriteMessages, {
@@ -258,20 +383,25 @@ MOTIVO: (max 3 righe)`
     const steps = options.steps || this.config.steps;
     const blockTokens = options.blockTokens || this.config.blockTokens;
     const k = options.k || this.config.k;
+    const language = options.language || this.detectedLanguage || 'en';
+
+    await this.loadPrompts();
 
     // Initial multi-sample
-    const { best } = await this.multiSampleConsensus(baseMessages, { k });
+    const { best } = await this.multiSampleConsensus(baseMessages, { k, language });
     let current = best;
 
     // Iterative refinement
     for (let t = 0; t < steps; t++) {
       // Continue reasoning
+      const continuePrompt = this.loadPromptTemplate('continue', language, { blockTokens });
+
       const contMessages = [
         ...baseMessages,
         { role: 'assistant', content: current },
         {
           role: 'user',
-          content: `Continua il ragionamento per circa ${blockTokens} token, fermati a fine frase.`
+          content: continuePrompt
         }
       ];
 
@@ -283,7 +413,7 @@ MOTIVO: (max 3 righe)`
       current = current + '\n' + contResponse.choices[0].content;
 
       // Annotate and rewrite
-      const { final } = await this.annotateAndRewrite(current);
+      const { final } = await this.annotateAndRewrite(current, { language });
       current = final;
     }
 
@@ -294,8 +424,16 @@ MOTIVO: (max 3 righe)`
    * Main entry point - run power sampling on a prompt
    */
   async run(prompt, options = {}) {
-    const systemPrompt = options.systemPrompt || 'Sei un assistente che ragiona in modo strutturato.';
     const mode = options.mode || 'full'; // 'full' | 'multi-sample' | 'annotate'
+
+    // Detect language from prompt (cached for subsequent calls)
+    const language = await this.detectLanguage(prompt);
+
+    // Load prompts to ensure templates are available
+    await this.loadPrompts();
+
+    // Use language-specific system prompt
+    const systemPrompt = options.systemPrompt || this.loadPromptTemplate('system_default', language);
 
     const baseMessages = [
       { role: 'system', content: systemPrompt },
@@ -306,9 +444,12 @@ MOTIVO: (max 3 righe)`
     let result;
 
     try {
+      // Pass language to all method calls
+      const optionsWithLang = { ...options, language };
+
       switch (mode) {
         case 'multi-sample':
-          const consensus = await this.multiSampleConsensus(baseMessages, options);
+          const consensus = await this.multiSampleConsensus(baseMessages, optionsWithLang);
           result = {
             text: consensus.best,
             candidates: consensus.all,
@@ -318,7 +459,7 @@ MOTIVO: (max 3 righe)`
 
         case 'annotate':
           const initial = await this.callLLM(baseMessages, { n: 1 });
-          const rewrite = await this.annotateAndRewrite(initial.choices[0].content, options);
+          const rewrite = await this.annotateAndRewrite(initial.choices[0].content, optionsWithLang);
           result = {
             text: rewrite.final,
             annotated: rewrite.annotated,
@@ -328,13 +469,14 @@ MOTIVO: (max 3 righe)`
 
         case 'full':
         default:
-          const final = await this.blockwisePowerSampling(baseMessages, options);
+          const final = await this.blockwisePowerSampling(baseMessages, optionsWithLang);
           const parsed = this.parseReasoningSolution(final);
 
           // Use SOLVER agent to extract deterministic solution
           const solverSolution = await this.solverAgent(
             prompt,
-            parsed.reasoning || final
+            parsed.reasoning || final,
+            language
           );
 
           result = {
@@ -353,6 +495,7 @@ MOTIVO: (max 3 righe)`
         metadata: {
           time: endTime - startTime,
           mode,
+          language,  // Include detected language in metadata
           config: {
             k: options.k || this.config.k,
             steps: options.steps || this.config.steps,

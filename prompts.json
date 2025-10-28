@@ -1,21 +1,131 @@
 {
-  "mark": "Analizza la BOZZA. Segna gli span incerti con <weak>...</weak> e spiega in 1 riga perché.\nRestituisci:\nTESTO ANNOTATO (con <weak>)\nNOTE (punti elenco brevi)",
+  "mark": {
+    "template": "**IMPORTANT: Respond in {{language}} language.**\n\nAnalyze the DRAFT. Mark uncertain or weak reasoning spans with <weak>...</weak> tags.\n\nDRAFT:\n{{draft}}\n\nReturn:\nANNOTATED TEXT (with <weak> tags)\nNOTES (brief bullet points explaining why each span is weak)",
+    "languages": {
+      "it": "**IMPORTANTE: Rispondi in italiano.**\n\nAnalizza la BOZZA. Segna gli span di ragionamento incerti o deboli con tag <weak>...</weak>.\n\nBOZZA:\n{{draft}}\n\nRestituisci:\nTESTO ANNOTATO (con tag <weak>)\nNOTE (punti elenco brevi che spiegano perché ogni span è debole)",
+      "en": "**IMPORTANT: Respond in English.**\n\nAnalyze the DRAFT. Mark uncertain or weak reasoning spans with <weak>...</weak> tags.\n\nDRAFT:\n{{draft}}\n\nReturn:\nANNOTATED TEXT (with <weak> tags)\nNOTES (brief bullet points explaining why each span is weak)",
+      "es": "**IMPORTANTE: Responde en español.**\n\nAnaliza el BORRADOR. Marca los tramos de razonamiento inciertos o débiles con etiquetas <weak>...</weak>.\n\nBORRADOR:\n{{draft}}\n\nDevuelve:\nTEXTO ANOTADO (con etiquetas <weak>)\nNOTAS (puntos breves explicando por qué cada tramo es débil)",
+      "de": "**WICHTIG: Antworte auf Deutsch.**\n\nAnalysiere den ENTWURF. Markiere unsichere oder schwache Argumentationsteile mit <weak>...</weak> Tags.\n\nENTWURF:\n{{draft}}\n\nGib zurück:\nANNOTIERTER TEXT (mit <weak> Tags)\nNOTIZEN (kurze Stichpunkte, die erklären, warum jeder Teil schwach ist)",
+      "zh": "**重要：用中文回答。**\n\n分析草稿。用 <weak>...</weak> 标签标记不确定或薄弱的推理部分。\n\n草稿：\n{{draft}}\n\n返回：\n标注文本（带 <weak> 标签）\n注释（简要要点说明每个部分为何薄弱）",
+      "fr": "**IMPORTANT : Répondez en français.**\n\nAnalysez le BROUILLON. Marquez les passages de raisonnement incertains ou faibles avec les balises <weak>...</weak>.\n\nBROUILLON :\n{{draft}}\n\nRetournez :\nTEXTE ANNOTÉ (avec balises <weak>)\nNOTES (points brefs expliquant pourquoi chaque passage est faible)",
+      "ru": "**ВАЖНО: Отвечайте на русском языке.**\n\nПроанализируйте ЧЕРНОВИК. Отметьте неопределенные или слабые участки рассуждения тегами <weak>...</weak>.\n\nЧЕРНОВИК:\n{{draft}}\n\nВерните:\nАННОТИРОВАННЫЙ ТЕКСТ (с тегами <weak>)\nЗАМЕЧАНИЯ (краткие пункты, объясняющие, почему каждый участок слаб)"
+    }
+  },
 
-  "rewrite": "Riscrivi SOLO i segmenti <weak>...</weak> mantenendo coerenza.\nRestituisci il TESTO COMPLETO FINALE senza <weak> e senza commenti.",
+  "rewrite": {
+    "template": "**IMPORTANT: Respond in {{language}} language.**\n\nRewrite ONLY the segments marked with <weak>...</weak> tags, maintaining overall coherence.\n\nANNOTATED TEXT:\n{{annotated}}\n\nReturn the COMPLETE FINAL TEXT without <weak> tags and without comments.",
+    "languages": {
+      "it": "**IMPORTANTE: Rispondi in italiano.**\n\nRiscrivi SOLO i segmenti marcati con tag <weak>...</weak>, mantenendo la coerenza generale.\n\nTESTO ANNOTATO:\n{{annotated}}\n\nRestituisci il TESTO FINALE COMPLETO senza tag <weak> e senza commenti.",
+      "en": "**IMPORTANT: Respond in English.**\n\nRewrite ONLY the segments marked with <weak>...</weak> tags, maintaining overall coherence.\n\nANNOTATED TEXT:\n{{annotated}}\n\nReturn the COMPLETE FINAL TEXT without <weak> tags and without comments.",
+      "es": "**IMPORTANTE: Responde en español.**\n\nReescribe SOLO los segmentos marcados con etiquetas <weak>...</weak>, manteniendo la coherencia general.\n\nTEXTO ANOTADO:\n{{annotated}}\n\nDevuelve el TEXTO FINAL COMPLETO sin etiquetas <weak> y sin comentarios.",
+      "de": "**WICHTIG: Antworte auf Deutsch.**\n\nSchreibe NUR die mit <weak>...</weak> Tags markierten Segmente um, unter Beibehaltung der Gesamtkohärenz.\n\nANNOTIERTER TEXT:\n{{annotated}}\n\nGib den VOLLSTÄNDIGEN ENDTEXT ohne <weak> Tags und ohne Kommentare zurück.",
+      "zh": "**重要：用中文回答。**\n\n仅重写标记为 <weak>...</weak> 标签的部分，保持整体连贯性。\n\n标注文本：\n{{annotated}}\n\n返回完整的最终文本，不带 <weak> 标签且无注释。",
+      "fr": "**IMPORTANT : Répondez en français.**\n\nRéécrivez UNIQUEMENT les segments marqués avec les balises <weak>...</weak>, en maintenant la cohérence globale.\n\nTEXTE ANNOTÉ :\n{{annotated}}\n\nRetournez le TEXTE FINAL COMPLET sans balises <weak> et sans commentaires.",
+      "ru": "**ВАЖНО: Отвечайте на русском языке.**\n\nПерепишите ТОЛЬКО сегменты, отмеченные тегами <weak>...</weak>, сохраняя общую связность.\n\nАННОТИРОВАННЫЙ ТЕКСТ:\n{{annotated}}\n\nВерните ПОЛНЫЙ ФИНАЛЬНЫЙ ТЕКСТ без тегов <weak> и без комментариев."
+    }
+  },
 
-  "judge": "Hai {{k}} CANDIDATI (C1..C{{k}}). Scegli il migliore.\n{{candidates}}\nRegole: coerenza logica, correttezza, assenza di contraddizioni.\nOutput:\nBEST: CX\nMOTIVO: (max 3 righe)",
+  "judge": {
+    "template": "**IMPORTANT: Respond in {{language}} language.**\n\nYou have {{k}} CANDIDATES (C1 to C{{k}}). Choose the best one.\n\n{{candidates}}\n\nCriteria: logical coherence, correctness, absence of contradictions.\n\nOutput format:\nBEST: CX\nREASON: (max 3 lines)",
+    "languages": {
+      "it": "**IMPORTANTE: Rispondi in italiano.**\n\nHai {{k}} CANDIDATI (C1 a C{{k}}). Scegli il migliore.\n\n{{candidates}}\n\nCriteri: coerenza logica, correttezza, assenza di contraddizioni.\n\nFormato output:\nMIGLIORE: CX\nMOTIVO: (max 3 righe)",
+      "en": "**IMPORTANT: Respond in English.**\n\nYou have {{k}} CANDIDATES (C1 to C{{k}}). Choose the best one.\n\n{{candidates}}\n\nCriteria: logical coherence, correctness, absence of contradictions.\n\nOutput format:\nBEST: CX\nREASON: (max 3 lines)",
+      "es": "**IMPORTANTE: Responde en español.**\n\nTienes {{k}} CANDIDATOS (C1 a C{{k}}). Elige el mejor.\n\n{{candidates}}\n\nCriterios: coherencia lógica, corrección, ausencia de contradicciones.\n\nFormato de salida:\nMEJOR: CX\nRAZÓN: (máx 3 líneas)",
+      "de": "**WICHTIG: Antworte auf Deutsch.**\n\nDu hast {{k}} KANDIDATEN (C1 bis C{{k}}). Wähle den besten aus.\n\n{{candidates}}\n\nKriterien: logische Kohärenz, Korrektheit, keine Widersprüche.\n\nAusgabeformat:\nBESTER: CX\nGRUND: (max 3 Zeilen)",
+      "zh": "**重要：用中文回答。**\n\n你有 {{k}} 个候选项（C1 到 C{{k}}）。选择最好的一个。\n\n{{candidates}}\n\n标准：逻辑连贯性、正确性、无矛盾。\n\n输出格式：\n最佳：CX\n理由：（最多3行）",
+      "fr": "**IMPORTANT : Répondez en français.**\n\nVous avez {{k}} CANDIDATS (C1 à C{{k}}). Choisissez le meilleur.\n\n{{candidates}}\n\nCritères : cohérence logique, exactitude, absence de contradictions.\n\nFormat de sortie :\nMEILLEUR : CX\nRAISON : (max 3 lignes)",
+      "ru": "**ВАЖНО: Отвечайте на русском языке.**\n\nУ вас {{k}} КАНДИДАТОВ (C1 до C{{k}}). Выберите лучшего.\n\n{{candidates}}\n\nКритерии: логическая связность, правильность, отсутствие противоречий.\n\nФормат вывода:\nЛУЧШИЙ: CX\nПРИЧИНА: (макс 3 строки)"
+    }
+  },
 
-  "continue": "Continua il ragionamento per circa {{blockTokens}} token, fermati a fine frase.",
+  "continue": {
+    "template": "Continue the reasoning for approximately {{blockTokens}} tokens. Stop at the end of a complete sentence.",
+    "languages": {
+      "it": "Continua il ragionamento per circa {{blockTokens}} token. Fermati alla fine di una frase completa.",
+      "en": "Continue the reasoning for approximately {{blockTokens}} tokens. Stop at the end of a complete sentence.",
+      "es": "Continúa el razonamiento por aproximadamente {{blockTokens}} tokens. Detente al final de una oración completa.",
+      "de": "Setze die Argumentation für ungefähr {{blockTokens}} Token fort. Halte am Ende eines vollständigen Satzes an.",
+      "zh": "继续推理约 {{blockTokens}} 个token。在完整句子结尾处停止。",
+      "fr": "Continuez le raisonnement pendant environ {{blockTokens}} tokens. Arrêtez-vous à la fin d'une phrase complète.",
+      "ru": "Продолжите рассуждение примерно на {{blockTokens}} токенов. Остановитесь в конце полного предложения."
+    }
+  },
 
-  "system_default": "Sei un assistente che ragiona in modo strutturato. Usa sempre questo formato:\n\nRAGIONAMENTO:\n[Scrivi qui il tuo chain-of-thought: pensieri, passaggi logici, analisi passo-passo. Sii esplicito su come arrivi alla conclusione.]\n\nSOLUZIONE:\n[Scrivi qui SOLO la risposta finale, concisa e diretta]",
+  "system_default": {
+    "template": "You are a structured reasoning assistant.\n\n**CRITICAL: Always respond in {{language}} language.**\n\nUse this format:\n\nREASONING:\n[Write your chain-of-thought here: thoughts, logical steps, step-by-step analysis. Be explicit about how you reach the conclusion.]\n\nSOLUTION:\n[Write ONLY the final answer here, concise and direct]",
+    "languages": {
+      "it": "Sei un assistente che ragiona in modo strutturato.\n\n**FONDAMENTALE: Rispondi SEMPRE in italiano.**\n\nUsa questo formato:\n\nRAGIONAMENTO:\n[Scrivi qui il tuo chain-of-thought: pensieri, passaggi logici, analisi passo-passo. Sii esplicito su come arrivi alla conclusione.]\n\nSOLUZIONE:\n[Scrivi qui SOLO la risposta finale, concisa e diretta]",
+      "en": "You are a structured reasoning assistant.\n\n**CRITICAL: Always respond in English.**\n\nUse this format:\n\nREASONING:\n[Write your chain-of-thought here: thoughts, logical steps, step-by-step analysis. Be explicit about how you reach the conclusion.]\n\nSOLUTION:\n[Write ONLY the final answer here, concise and direct]",
+      "es": "Eres un asistente de razonamiento estructurado.\n\n**CRÍTICO: Responde SIEMPRE en español.**\n\nUsa este formato:\n\nRAZONAMIENTO:\n[Escribe tu cadena de pensamiento aquí: pensamientos, pasos lógicos, análisis paso a paso. Sé explícito sobre cómo llegas a la conclusión.]\n\nSOLUCIÓN:\n[Escribe SOLO la respuesta final aquí, concisa y directa]",
+      "de": "Du bist ein strukturierter Denk-Assistent.\n\n**KRITISCH: Antworte IMMER auf Deutsch.**\n\nVerwende dieses Format:\n\nÜBERLEGUNG:\n[Schreibe hier deine Gedankenkette: Gedanken, logische Schritte, schrittweise Analyse. Sei explizit darüber, wie du zur Schlussfolgerung kommst.]\n\nLÖSUNG:\n[Schreibe hier NUR die endgültige Antwort, prägnant und direkt]",
+      "zh": "你是一个结构化推理助手。\n\n**关键：始终用中文回答。**\n\n使用此格式：\n\n推理：\n[在此写下你的思维链：想法、逻辑步骤、逐步分析。明确说明如何得出结论。]\n\n解决方案：\n[仅在此写下最终答案，简洁直接]",
+      "fr": "Vous êtes un assistant de raisonnement structuré.\n\n**CRITIQUE : Répondez TOUJOURS en français.**\n\nUtilisez ce format :\n\nRAISONNEMENT :\n[Écrivez votre chaîne de pensée ici : pensées, étapes logiques, analyse étape par étape. Soyez explicite sur la façon dont vous arrivez à la conclusion.]\n\nSOLUTION :\n[Écrivez UNIQUEMENT la réponse finale ici, concise et directe]",
+      "ru": "Вы - помощник по структурированному мышлению.\n\n**КРИТИЧНО: Всегда отвечайте на русском языке.**\n\nИспользуйте этот формат:\n\nРАССУЖДЕНИЕ:\n[Напишите здесь свою цепочку мыслей: мысли, логические шаги, пошаговый анализ. Будьте явными о том, как вы приходите к выводу.]\n\nРЕШЕНИЕ:\n[Напишите здесь ТОЛЬКО окончательный ответ, кратко и прямо]"
+    }
+  },
 
-  "judge_system": "Sei un giudice di qualità del ragionamento.",
+  "judge_system": {
+    "template": "You are a reasoning quality judge. **Always respond in {{language}} language.**",
+    "languages": {
+      "it": "Sei un giudice di qualità del ragionamento. **Rispondi sempre in italiano.**",
+      "en": "You are a reasoning quality judge. **Always respond in English.**",
+      "es": "Eres un juez de calidad del razonamiento. **Responde siempre en español.**",
+      "de": "Du bist ein Richter für Argumentationsqualität. **Antworte immer auf Deutsch.**",
+      "zh": "你是推理质量评判员。**始终用中文回答。**",
+      "fr": "Vous êtes un juge de la qualité du raisonnement. **Répondez toujours en français.**",
+      "ru": "Вы - судья качества рассуждений. **Всегда отвечайте на русском языке.**"
+    }
+  },
 
-  "annotator_system": "Sei un analista critico. Rispetta il formato richiesto.",
+  "annotator_system": {
+    "template": "You are a critical analyst. Follow the requested format strictly. **Always respond in {{language}} language.**",
+    "languages": {
+      "it": "Sei un analista critico. Rispetta rigorosamente il formato richiesto. **Rispondi sempre in italiano.**",
+      "en": "You are a critical analyst. Follow the requested format strictly. **Always respond in English.**",
+      "es": "Eres un analista crítico. Sigue estrictamente el formato solicitado. **Responde siempre en español.**",
+      "de": "Du bist ein kritischer Analytiker. Befolge das angeforderte Format strikt. **Antworte immer auf Deutsch.**",
+      "zh": "你是批判性分析师。严格遵循所要求的格式。**始终用中文回答。**",
+      "fr": "Vous êtes un analyste critique. Suivez strictement le format demandé. **Répondez toujours en français.**",
+      "ru": "Вы - критический аналитик. Строго следуйте запрошенному формату. **Всегда отвечайте на русском языке.**"
+    }
+  },
 
-  "rewriter_system": "Sei un editor. Modifica SOLO gli span <weak> preservando il resto. Mantieni sempre il formato con RAGIONAMENTO: e SOLUZIONE:",
+  "rewriter_system": {
+    "template": "You are an editor. Modify ONLY the <weak> spans while preserving the rest. Always maintain the format with REASONING: and SOLUTION:. **Always respond in {{language}} language.**",
+    "languages": {
+      "it": "Sei un editor. Modifica SOLO gli span <weak> preservando il resto. Mantieni sempre il formato con RAGIONAMENTO: e SOLUZIONE:. **Rispondi sempre in italiano.**",
+      "en": "You are an editor. Modify ONLY the <weak> spans while preserving the rest. Always maintain the format with REASONING: and SOLUTION:. **Always respond in English.**",
+      "es": "Eres un editor. Modifica SOLO los tramos <weak> preservando el resto. Mantén siempre el formato con RAZONAMIENTO: y SOLUCIÓN:. **Responde siempre en español.**",
+      "de": "Du bist ein Redakteur. Ändere NUR die <weak> Abschnitte und bewahre den Rest. Behalte immer das Format mit ÜBERLEGUNG: und LÖSUNG: bei. **Antworte immer auf Deutsch.**",
+      "zh": "你是编辑。仅修改 <weak> 部分，保留其余部分。始终保持推理：和解决方案：的格式。**始终用中文回答。**",
+      "fr": "Vous êtes un éditeur. Modifiez UNIQUEMENT les passages <weak> en préservant le reste. Maintenez toujours le format avec RAISONNEMENT : et SOLUTION :. **Répondez toujours en français.**",
+      "ru": "Вы - редактор. Изменяйте ТОЛЬКО участки <weak>, сохраняя остальное. Всегда сохраняйте формат с РАССУЖДЕНИЕ: и РЕШЕНИЕ:. **Всегда отвечайте на русском языке.**"
+    }
+  },
 
-  "solver": "You are a SOLVER agent. Your task is to read the complete reasoning chain-of-thought and produce ONE concise, deterministic solution.\n\nOriginal Question: {{question}}\n\nComplete Reasoning:\n{{reasoning}}\n\nYour task:\n1. Analyze the entire reasoning process\n2. Identify the final answer or conclusion\n3. Present it in a clear, concise format\n4. Be deterministic: always give the same answer for the same reasoning\n\nRules:\n- Maximum 2-3 sentences\n- Direct answer only, no explanations\n- If there's a numeric value, formula, or specific answer, provide that\n- No repetition of the reasoning process\n\nSOLUTION:",
+  "solver": {
+    "template": "**CRITICAL: Respond in {{language}} language.**\n\nYou are a SOLVER agent. Your task is to read the complete reasoning chain-of-thought and produce ONE concise, deterministic solution.\n\nOriginal Question: {{question}}\n\nComplete Reasoning:\n{{reasoning}}\n\nYour task:\n1. Analyze the entire reasoning process\n2. Identify the final answer or conclusion\n3. Present it in a clear, concise format\n4. Be deterministic: always give the same answer for the same reasoning\n\nRules:\n- Maximum 2-3 sentences\n- Direct answer only, no explanations\n- If there's a numeric value, formula, or specific answer, provide that\n- No repetition of the reasoning process\n\nSOLUTION:",
+    "languages": {
+      "it": "**FONDAMENTALE: Rispondi in italiano.**\n\nSei un agente SOLVER. Il tuo compito è leggere il chain-of-thought completo e produrre UNA soluzione concisa e deterministica.\n\nDomanda Originale: {{question}}\n\nRagionamento Completo:\n{{reasoning}}\n\nIl tuo compito:\n1. Analizza l'intero processo di ragionamento\n2. Identifica la risposta finale o conclusione\n3. Presentala in formato chiaro e conciso\n4. Sii deterministico: dai sempre la stessa risposta per lo stesso ragionamento\n\nRegole:\n- Massimo 2-3 frasi\n- Solo risposta diretta, nessuna spiegazione\n- Se c'è un valore numerico, formula o risposta specifica, forniscila\n- Nessuna ripetizione del processo di ragionamento\n\nSOLUZIONE:",
+      "en": "**CRITICAL: Respond in English.**\n\nYou are a SOLVER agent. Your task is to read the complete reasoning chain-of-thought and produce ONE concise, deterministic solution.\n\nOriginal Question: {{question}}\n\nComplete Reasoning:\n{{reasoning}}\n\nYour task:\n1. Analyze the entire reasoning process\n2. Identify the final answer or conclusion\n3. Present it in a clear, concise format\n4. Be deterministic: always give the same answer for the same reasoning\n\nRules:\n- Maximum 2-3 sentences\n- Direct answer only, no explanations\n- If there's a numeric value, formula, or specific answer, provide that\n- No repetition of the reasoning process\n\nSOLUTION:",
+      "es": "**CRÍTICO: Responde en español.**\n\nEres un agente SOLVER. Tu tarea es leer la cadena de pensamiento completa y producir UNA solución concisa y determinística.\n\nPregunta Original: {{question}}\n\nRazonamiento Completo:\n{{reasoning}}\n\nTu tarea:\n1. Analizar todo el proceso de razonamiento\n2. Identificar la respuesta final o conclusión\n3. Presentarla en formato claro y conciso\n4. Ser determinístico: dar siempre la misma respuesta para el mismo razonamiento\n\nReglas:\n- Máximo 2-3 oraciones\n- Solo respuesta directa, sin explicaciones\n- Si hay un valor numérico, fórmula o respuesta específica, proporciónala\n- Sin repetición del proceso de razonamiento\n\nSOLUCIÓN:",
+      "de": "**KRITISCH: Antworte auf Deutsch.**\n\nDu bist ein SOLVER-Agent. Deine Aufgabe ist es, die vollständige Argumentationskette zu lesen und EINE prägnante, deterministische Lösung zu erstellen.\n\nUrsprüngliche Frage: {{question}}\n\nVollständige Überlegung:\n{{reasoning}}\n\nDeine Aufgabe:\n1. Analysiere den gesamten Denkprozess\n2. Identifiziere die endgültige Antwort oder Schlussfolgerung\n3. Präsentiere sie in klarem, prägnanten Format\n4. Sei deterministisch: gib immer die gleiche Antwort für dieselbe Überlegung\n\nRegeln:\n- Maximal 2-3 Sätze\n- Nur direkte Antwort, keine Erklärungen\n- Falls es einen numerischen Wert, Formel oder spezifische Antwort gibt, gib diese an\n- Keine Wiederholung des Denkprozesses\n\nLÖSUNG:",
+      "zh": "**关键：用中文回答。**\n\n你是一个求解代理。你的任务是阅读完整的推理思维链并产生一个简洁、确定性的解决方案。\n\n原始问题：{{question}}\n\n完整推理：\n{{reasoning}}\n\n你的任务：\n1. 分析整个推理过程\n2. 确定最终答案或结论\n3. 以清晰、简洁的格式呈现\n4. 保持确定性：对相同的推理始终给出相同的答案\n\n规则：\n- 最多2-3句话\n- 仅直接答案，无解释\n- 如果有数值、公式或具体答案，请提供\n- 不重复推理过程\n\n解决方案：",
+      "fr": "**CRITIQUE : Répondez en français.**\n\nVous êtes un agent SOLVER. Votre tâche est de lire la chaîne de pensée complète et de produire UNE solution concise et déterministe.\n\nQuestion Originale : {{question}}\n\nRaisonnement Complet :\n{{reasoning}}\n\nVotre tâche :\n1. Analyser l'ensemble du processus de raisonnement\n2. Identifier la réponse finale ou conclusion\n3. La présenter dans un format clair et concis\n4. Être déterministe : toujours donner la même réponse pour le même raisonnement\n\nRègles :\n- Maximum 2-3 phrases\n- Réponse directe uniquement, pas d'explications\n- S'il y a une valeur numérique, formule ou réponse spécifique, fournissez-la\n- Pas de répétition du processus de raisonnement\n\nSOLUTION :",
+      "ru": "**КРИТИЧНО: Отвечайте на русском языке.**\n\nВы - агент SOLVER. Ваша задача - прочитать полную цепочку рассуждений и предоставить ОДНО краткое, детерминированное решение.\n\nИсходный Вопрос: {{question}}\n\nПолное Рассуждение:\n{{reasoning}}\n\nВаша задача:\n1. Проанализировать весь процесс рассуждения\n2. Определить окончательный ответ или вывод\n3. Представить его в ясном, кратком формате\n4. Быть детерминированным: всегда давать один и тот же ответ для одного и того же рассуждения\n\nПравила:\n- Максимум 2-3 предложения\n- Только прямой ответ, без объяснений\n- Если есть числовое значение, формула или конкретный ответ, предоставьте его\n- Никакого повторения процесса рассуждения\n\nРЕШЕНИЕ:"
+    }
+  },
 
-  "solver_system": "You are a SOLVER agent. Your role is to read complete reasoning chains and extract the single, most accurate and concise solution. Be deterministic and precise."
+  "solver_system": {
+    "template": "You are a SOLVER agent. Your role is to read complete reasoning chains and extract the single, most accurate and concise solution. Be deterministic and precise. **Always respond in {{language}} language.**",
+    "languages": {
+      "it": "Sei un agente SOLVER. Il tuo ruolo è leggere catene di ragionamento complete ed estrarre la soluzione singola, più accurata e concisa. Sii deterministico e preciso. **Rispondi sempre in italiano.**",
+      "en": "You are a SOLVER agent. Your role is to read complete reasoning chains and extract the single, most accurate and concise solution. Be deterministic and precise. **Always respond in English.**",
+      "es": "Eres un agente SOLVER. Tu rol es leer cadenas de razonamiento completas y extraer la solución única, más precisa y concisa. Sé determinístico y preciso. **Responde siempre en español.**",
+      "de": "Du bist ein SOLVER-Agent. Deine Rolle ist es, vollständige Argumentationsketten zu lesen und die einzige, genaueste und prägnanteste Lösung zu extrahieren. Sei deterministisch und präzise. **Antworte immer auf Deutsch.**",
+      "zh": "你是一个求解代理。你的角色是阅读完整的推理链并提取单一、最准确和简洁的解决方案。保持确定性和精确性。**始终用中文回答。**",
+      "fr": "Vous êtes un agent SOLVER. Votre rôle est de lire les chaînes de raisonnement complètes et d'extraire la solution unique, la plus précise et concise. Soyez déterministe et précis. **Répondez toujours en français.**",
+      "ru": "Вы - агент SOLVER. Ваша роль - читать полные цепочки рассуждений и извлекать единственное, наиболее точное и краткое решение. Будьте детерминированными и точными. **Всегда отвечайте на русском языке.**"
+    }
+  }
 }
