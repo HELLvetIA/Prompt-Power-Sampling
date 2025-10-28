@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Power Sampling - Playground</title>
+  <title data-i18n="title">Power Sampling - Playground</title>
   <style>
     * {
       box-sizing: border-box;
@@ -184,47 +184,61 @@
 </head>
 <body>
   <div class="container">
-    <h1>⚡ Power Sampling Playground</h1>
-    <p class="subtitle">Training-free reasoning con multi-sampling e self-critique</p>
+    <h1 data-i18n="h1">⚡ Power Sampling Playground</h1>
+    <p class="subtitle" data-i18n="subtitle">Training-free reasoning con multi-sampling e self-critique</p>
 
     <div class="card">
-      <label for="prompt">Prompt</label>
+      <label for="prompt" data-i18n="promptLabel">Prompt</label>
       <textarea
         id="prompt"
-        placeholder="Inserisci la tua domanda o il compito da risolvere...&#10;&#10;Esempio: Risolvi: se x+y=10 e x-y=2, trova x e y."
-      >Risolvi: se x+y=10 e x-y=2, trova x e y.</textarea>
+        data-i18n-placeholder="promptPlaceholder"
+        data-i18n-value="promptExample"
+      ></textarea>
 
       <div class="controls">
         <div class="control-group">
-          <label for="mode">Modalità:</label>
-          <select id="mode">
-            <option value="full">Full (multi-sample + rewrite)</option>
-            <option value="multi-sample">Solo Multi-Sample</option>
-            <option value="annotate">Solo Annotate + Rewrite</option>
+          <label for="language" data-i18n="language">🌐 Lingua:</label>
+          <select id="language" onchange="changeLanguage(this.value)">
+            <option value="it">Italiano</option>
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="de">Deutsch</option>
+            <option value="zh">中文</option>
+            <option value="fr">Français</option>
+            <option value="ru">Русский</option>
           </select>
         </div>
 
         <div class="control-group">
-          <label for="k">Campioni (k):</label>
+          <label for="mode" data-i18n="modeLabel">Modalità:</label>
+          <select id="mode">
+            <option value="full" data-i18n="modeFull">Full (multi-sample + rewrite)</option>
+            <option value="multi-sample" data-i18n="modeMultiSample">Solo Multi-Sample</option>
+            <option value="annotate" data-i18n="modeAnnotate">Solo Annotate + Rewrite</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="k" data-i18n="samplesLabel">Campioni (k):</label>
           <input type="number" id="k" value="3" min="1" max="5">
         </div>
 
         <div class="control-group">
-          <label for="steps">Steps:</label>
+          <label for="steps" data-i18n="stepsLabel">Steps:</label>
           <input type="number" id="steps" value="2" min="1" max="5">
         </div>
 
-        <button id="runBtn" onclick="runPowerSampling()">
+        <button id="runBtn" onclick="runPowerSampling()" data-i18n="runButton">
           Esegui Power Sampling
         </button>
       </div>
     </div>
 
     <div class="card" id="resultCard" style="display: none;">
-      <label>📊 Ragionamento (Chain-of-Thought)</label>
+      <label data-i18n="reasoningLabel">📊 Ragionamento (Chain-of-Thought)</label>
       <div id="reasoning" class="output"></div>
 
-      <label style="margin-top: 20px;">✅ Soluzione</label>
+      <label style="margin-top: 20px;" data-i18n="solutionLabel">✅ Soluzione</label>
       <div id="solution" class="output solution-box"></div>
 
       <div id="metadata" class="metadata hidden"></div>
@@ -236,15 +250,89 @@
     import config from './config.browser.js';
 
     let ps;
+    let translations = {};
+    let currentLang = localStorage.getItem('language') || 'it';
+
+    // Carica le traduzioni
+    async function loadTranslations() {
+      try {
+        const response = await fetch('./translations.json');
+        translations = await response.json();
+        console.log('✅ Translations loaded');
+      } catch (error) {
+        console.error('❌ Error loading translations:', error);
+      }
+    }
+
+    // Applica le traduzioni
+    function applyTranslations(lang) {
+      if (!translations[lang]) {
+        console.error(`Language ${lang} not found`);
+        return;
+      }
+
+      const t = translations[lang];
+
+      // Aggiorna il tag html lang
+      document.documentElement.lang = lang;
+
+      // Aggiorna title
+      document.title = t.title;
+
+      // Aggiorna tutti gli elementi con data-i18n
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key]) {
+          el.textContent = t[key];
+        }
+      });
+
+      // Aggiorna placeholder
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (t[key]) {
+          el.placeholder = t[key];
+        }
+      });
+
+      // Aggiorna valore iniziale textarea
+      const promptTextarea = document.getElementById('prompt');
+      if (promptTextarea && !promptTextarea.value.trim()) {
+        promptTextarea.value = t.promptExample;
+      }
+
+      // Aggiorna il selettore di lingua
+      const languageSelect = document.getElementById('language');
+      if (languageSelect) {
+        languageSelect.value = lang;
+      }
+
+      currentLang = lang;
+      localStorage.setItem('language', lang);
+    }
+
+    // Funzione globale per cambiare lingua
+    window.changeLanguage = function(lang) {
+      applyTranslations(lang);
+    }
+
+    // Ottiene traduzione dinamica
+    function t(key) {
+      return translations[currentLang]?.[key] || key;
+    }
 
     // Inizializza PowerSampling
     async function init() {
       try {
+        // Carica traduzioni prima
+        await loadTranslations();
+        applyTranslations(currentLang);
+
         console.log('Config ricevuto:', config);
 
         // Verifica che config abbia i valori necessari
         if (!config.apiKey) {
-          throw new Error('API Key mancante! Controlla il file .env e riavvia il server.');
+          throw new Error(t('errorApiKey'));
         }
 
         ps = new PowerSampling(config);
@@ -254,7 +342,7 @@
         console.log('   Modello:', config.model);
       } catch (error) {
         console.error('❌ Errore inizializzazione:', error);
-        showError(`Errore di configurazione: ${error.message}`);
+        showError(`${t('errorConfig')} ${error.message}`);
       }
     }
 
@@ -265,12 +353,12 @@
       const steps = parseInt(document.getElementById('steps').value);
 
       if (!prompt) {
-        showError('Inserisci un prompt!');
+        showError(t('errorNoPrompt'));
         return;
       }
 
       if (!ps) {
-        showError('PowerSampling non inizializzato! Ricarica la pagina e controlla la console del browser (F12).');
+        showError(t('errorNotInit'));
         return;
       }
 
@@ -282,9 +370,9 @@
 
       // UI feedback
       runBtn.disabled = true;
-      runBtn.innerHTML = '<span class="loading"></span> Elaborazione...';
+      runBtn.innerHTML = `<span class="loading"></span> ${t('running')}`;
       resultCard.style.display = 'block';
-      reasoning.textContent = 'Esecuzione in corso...\n\nQuesto potrebbe richiedere alcuni secondi.';
+      reasoning.textContent = t('runningMessage');
       solution.textContent = '';
       reasoning.className = 'output';
       solution.className = 'output solution-box';
@@ -296,26 +384,26 @@
         if (result.success) {
           // Mostra il risultato
           if (mode === 'multi-sample') {
-            reasoning.textContent = `✅ MIGLIOR CANDIDATO:\n\n${result.result.text}\n\n` +
-              `📊 GIUDIZIO:\n${result.result.judge}`;
-            solution.textContent = `📋 TUTTI I CANDIDATI:\n${result.result.candidates.map((c, i) => `C${i+1}:\n${c.substring(0, 100)}...`).join('\n\n')}`;
+            reasoning.textContent = `${t('bestCandidate')}\n\n${result.result.text}\n\n` +
+              `${t('judgment')}\n${result.result.judge}`;
+            solution.textContent = `${t('allCandidates')}\n${result.result.candidates.map((c, i) => `C${i+1}:\n${c.substring(0, 100)}...`).join('\n\n')}`;
           } else if (mode === 'annotate') {
-            reasoning.textContent = `📝 ANNOTATO:\n${result.result.annotated || 'N/A'}`;
-            solution.textContent = `✅ TESTO FINALE:\n\n${result.result.text}`;
+            reasoning.textContent = `${t('annotated')}\n${result.result.annotated || 'N/A'}`;
+            solution.textContent = `${t('finalText')}\n\n${result.result.text}`;
           } else {
             // Modalità full - separa ragionamento e soluzione
             reasoning.textContent = result.result.reasoning || result.result.text;
-            solution.textContent = result.result.solution || 'Nessuna soluzione separata disponibile';
+            solution.textContent = result.result.solution || t('noSolution');
           }
 
           // Mostra metadata
           metadata.className = 'metadata';
           metadata.innerHTML = `
-            <span>⏱️ Tempo: ${(result.metadata.time / 1000).toFixed(2)}s</span>
-            <span>🎯 Modalità: ${mode}</span>
-            <span>📊 Campioni: ${result.metadata.config.k}</span>
-            <span>🔄 Steps: ${result.metadata.config.steps}</span>
-            <span>🤖 Modello: ${result.metadata.config.model}</span>
+            <span>${t('metaTime')} ${(result.metadata.time / 1000).toFixed(2)}s</span>
+            <span>${t('metaMode')} ${mode}</span>
+            <span>${t('metaSamples')} ${result.metadata.config.k}</span>
+            <span>${t('metaSteps')} ${result.metadata.config.steps}</span>
+            <span>${t('metaModel')} ${result.metadata.config.model}</span>
           `;
         } else {
           showError(result.error);
@@ -324,7 +412,7 @@
         showError(error.message);
       } finally {
         runBtn.disabled = false;
-        runBtn.textContent = 'Esegui Power Sampling';
+        runBtn.textContent = t('runButton');
       }
     }
 
@@ -335,7 +423,7 @@
       const metadata = document.getElementById('metadata');
 
       resultCard.style.display = 'block';
-      reasoning.textContent = `❌ Errore:\n\n${message}`;
+      reasoning.textContent = `${t('errorPrefix')}\n\n${message}`;
       reasoning.className = 'output error';
       solution.textContent = '';
       solution.className = 'output solution-box';
