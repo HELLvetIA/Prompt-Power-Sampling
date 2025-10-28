@@ -49,3 +49,6 @@ coverage/
 *.tmp
 *.temp
 .cache/
+
+# AI
+CLAUDE.md
