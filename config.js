@@ -35,5 +35,13 @@ export default {
 
   // Multilingual Support
   autoDetectLanguage: true,        // Rileva automaticamente la lingua del prompt
-  defaultLanguage: 'en'            // Lingua di fallback se detection fallisce
+  defaultLanguage: 'en',           // Lingua di fallback se detection fallisce
+
+  // MCMC (Markov Chain Monte Carlo) Parameters
+  mcmc: {
+    enabled: true,                 // Usa MCMC invece di sampling classico
+    initialTemp: 0.95,             // Temperatura iniziale alta (esplorazione)
+    tempDecay: 0.7,                // Fattore di decay esponenziale: temp(t) = initialTemp * (decay^t)
+    acceptanceThreshold: 0.3       // Soglia minima per acceptance (non usata con Metropolis-Hastings puro)
+  }
 };

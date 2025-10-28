@@ -197,6 +197,48 @@ export class PowerSampling {
   }
 
   /**
+   * SCORER agent - Evaluate reasoning quality (0-10)
+   * Used in MCMC for Metropolis-Hastings acceptance
+   */
+  async scoreReasoning(text, language = 'en') {
+    await this.loadPrompts();
+
+    const scorerPrompt = this.loadPromptTemplate('scorer', language, { text });
+    const scorerSystem = this.loadPromptTemplate('scorer_system', language);
+
+    const messages = [
+      { role: 'system', content: scorerSystem },
+      { role: 'user', content: scorerPrompt }
+    ];
+
+    const response = await this.callLLM(messages, {
+      n: 1,
+      temperature: 0.0 // Deterministic scoring
+    });
+
+    const content = response.choices[0].content;
+
+    // Parse score from response (multi-language regex)
+    // Matches: "SCORE: 7.5", "PUNTEGGIO: 8.0", "PUNTUACIÓN: 6.5", etc.
+    const scoreMatch = content.match(/(?:SCORE|PUNTEGGIO|PUNTUACIÓN|PUNKTZAHL|评分|NOTE|ОЦЕНКА):\s*(\d+\.?\d*)/i);
+    const score = scoreMatch ? parseFloat(scoreMatch[1]) : 5.0; // Default to 5.0 if parsing fails
+
+    // Parse reason (extract text after REASON/MOTIVO/etc.)
+    const reasonMatch = content.match(/(?:REASON|MOTIVO|RAZÓN|GRUND|理由|RAISON|ПРИЧИНА):\s*(.+)/i);
+    const reason = reasonMatch ? reasonMatch[1].trim() : 'No reason provided';
+
+    if (this.config.verbose) {
+      console.log(`📊 SCORER: ${score.toFixed(1)}/10 - ${reason.substring(0, 50)}...`);
+    }
+
+    return {
+      score: Math.max(0, Math.min(10, score)), // Clamp to [0, 10]
+      reason,
+      fullResponse: content
+    };
+  }
+
+  /**
    * Load prompt templates from JSON file
    */
   async loadPrompts() {
@@ -421,6 +463,149 @@ MOTIVO: (max 3 righe)`
   }
 
   /**
+   * Step 4: MCMC Chain Sampling with sharpened distributions
+   * Implements Markov Chain Monte Carlo with:
+   * - Temperature annealing (simulated annealing)
+   * - Metropolis-Hastings acceptance/rejection
+   * - Guided exploration instead of independent sampling
+   */
+  async mcmcChainSampling(baseMessages, options = {}) {
+    const k = options.k || this.config.k;
+    const T = options.steps || this.config.steps; // Number of MCMC iterations
+    const blockTokens = options.blockTokens || this.config.blockTokens;
+    const language = options.language || this.detectedLanguage || 'en';
+
+    // MCMC-specific parameters
+    const mcmcConfig = this.config.mcmc || {};
+    const initialTemp = mcmcConfig.initialTemp || 0.95;
+    const tempDecay = mcmcConfig.tempDecay || 0.7;
+    const acceptanceThreshold = mcmcConfig.acceptanceThreshold || 0.3;
+
+    await this.loadPrompts();
+
+    if (this.config.verbose) {
+      console.log(`\n🔬 MCMC Chain Sampling: k=${k}, T=${T}, initialTemp=${initialTemp}, decay=${tempDecay}`);
+    }
+
+    // Phase 1: Initial multi-sample with high temperature
+    if (this.config.verbose) {
+      console.log(`\n📊 Phase 1: Initial sampling (k=${k}, temp=${initialTemp})`);
+    }
+
+    const initialSamples = await this.multiSampleConsensus(baseMessages, {
+      k,
+      temperature: initialTemp,
+      language
+    });
+
+    // Initialize chain with best initial sample
+    let X_current = initialSamples.best;
+    const scoringResult = await this.scoreReasoning(X_current, language);
+    let score_current = scoringResult.score;
+
+    if (this.config.verbose) {
+      console.log(`✅ Initial state score: ${score_current.toFixed(1)}/10`);
+    }
+
+    // Track chain history
+    const chain = [{
+      iteration: 0,
+      state: X_current,
+      score: score_current,
+      accepted: true,
+      temperature: initialTemp
+    }];
+
+    // Phase 2: MCMC iterations
+    for (let t = 1; t <= T; t++) {
+      // Temperature annealing: temp(t) = initialTemp * (decay^t)
+      const temp_t = initialTemp * Math.pow(tempDecay, t);
+
+      if (this.config.verbose) {
+        console.log(`\n🔄 Iteration ${t}/${T} (temp=${temp_t.toFixed(3)})`);
+      }
+
+      // Step 2a: PROPOSE - Continue reasoning with annealed temperature
+      const continuePrompt = this.loadPromptTemplate('continue', language, { blockTokens });
+      const proposeMessages = [
+        ...baseMessages,
+        { role: 'assistant', content: X_current },
+        { role: 'user', content: continuePrompt }
+      ];
+
+      const proposeResponse = await this.callLLM(proposeMessages, {
+        n: 1,
+        temperature: temp_t
+      });
+
+      let X_proposed = X_current + '\n' + proposeResponse.choices[0].content;
+
+      // Step 2b: REFINE - Annotate and rewrite weak spans
+      const { final } = await this.annotateAndRewrite(X_proposed, { language });
+      X_proposed = final;
+
+      // Step 2c: SCORE - Evaluate quality of proposed state
+      const scoringProposed = await this.scoreReasoning(X_proposed, language);
+      const score_proposed = scoringProposed.score;
+
+      // Step 2d: ACCEPT/REJECT - Metropolis-Hastings criterion
+      // acceptance_prob = min(1, score_proposed / score_current)
+      const acceptanceProb = Math.min(1, score_proposed / score_current);
+      const randomValue = Math.random();
+      const accepted = randomValue < acceptanceProb;
+
+      if (this.config.verbose) {
+        console.log(`  Proposed score: ${score_proposed.toFixed(1)}/10`);
+        console.log(`  Current score:  ${score_current.toFixed(1)}/10`);
+        console.log(`  Acceptance prob: ${(acceptanceProb * 100).toFixed(1)}%`);
+        console.log(`  Random value: ${(randomValue * 100).toFixed(1)}%`);
+        console.log(`  Result: ${accepted ? '✅ ACCEPTED' : '❌ REJECTED'}`);
+      }
+
+      if (accepted) {
+        X_current = X_proposed;
+        score_current = score_proposed;
+      }
+
+      // Track chain state
+      chain.push({
+        iteration: t,
+        state: X_current,
+        score: score_current,
+        scoreProposed: score_proposed,
+        accepted,
+        acceptanceProb,
+        temperature: temp_t
+      });
+    }
+
+    // Phase 3: Return best state from chain
+    const bestState = chain.reduce((best, current) =>
+      current.score > best.score ? current : best
+    );
+
+    if (this.config.verbose) {
+      const acceptanceRate = chain.filter(s => s.accepted).length / chain.length;
+      console.log(`\n✅ MCMC Complete:`);
+      console.log(`   Best score: ${bestState.score.toFixed(1)}/10 (iteration ${bestState.iteration})`);
+      console.log(`   Final score: ${score_current.toFixed(1)}/10`);
+      console.log(`   Acceptance rate: ${(acceptanceRate * 100).toFixed(1)}%`);
+    }
+
+    return {
+      text: bestState.state,
+      score: bestState.score,
+      chain,
+      metadata: {
+        bestIteration: bestState.iteration,
+        acceptanceRate: chain.filter(s => s.accepted).length / chain.length,
+        initialScore: chain[0].score,
+        finalScore: score_current
+      }
+    };
+  }
+
+  /**
    * Main entry point - run power sampling on a prompt
    */
   async run(prompt, options = {}) {
@@ -464,6 +649,28 @@ MOTIVO: (max 3 righe)`
             text: rewrite.final,
             annotated: rewrite.annotated,
             notes: rewrite.notes
+          };
+          break;
+
+        case 'mcmc':
+          // MCMC-based sampling with Metropolis-Hastings
+          const mcmcResult = await this.mcmcChainSampling(baseMessages, optionsWithLang);
+          const parsedMcmc = this.parseReasoningSolution(mcmcResult.text);
+
+          // Use SOLVER agent to extract deterministic solution
+          const mcmcSolution = await this.solverAgent(
+            prompt,
+            parsedMcmc.reasoning || mcmcResult.text,
+            language
+          );
+
+          result = {
+            text: mcmcResult.text,
+            reasoning: parsedMcmc.reasoning,
+            solution: mcmcSolution,
+            score: mcmcResult.score,
+            chain: mcmcResult.chain,
+            mcmcMetadata: mcmcResult.metadata
           };
           break;
 
